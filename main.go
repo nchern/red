@@ -12,17 +12,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/nchern/red/app"
+
 	color "gopkg.in/fatih/color.v1"
 )
 
 const (
 	filenameBase = "query"
-
-	defaultHost = "http://localhost:9200"
-
-	templateAsset = "assets/template.txt"
-
-	jsIndent = "   "
 )
 
 var (
@@ -35,8 +31,6 @@ var (
 
 	queryFilePath = path.Join(appHomePath, queryFilename)
 	outFilePath   = path.Join(appHomePath, outFilename)
-
-	methods = []string{"GET", "POST", "DELETE", "PUT"}
 )
 
 func notEmpty(val, defaultVal string) string {
@@ -57,7 +51,7 @@ func openEditor() error {
 			return err
 		}
 		// path/to/whatever does not exist
-		if err := ioutil.WriteFile(queryFilePath, MustAsset(templateAsset), 0644); err != nil {
+		if err := ioutil.WriteFile(queryFilePath, app.MustAsset(app.TemplateAsset), 0644); err != nil {
 			return err
 		}
 	}
@@ -73,7 +67,7 @@ func openEditor() error {
 	return cmd.Run()
 }
 
-func doRequest(req *ParsedRequest) (int, []byte, error) {
+func doRequest(req *app.ParsedRequest) (int, []byte, error) {
 	src, err := req.JSON()
 	if err != nil {
 		return 0, nil, err
@@ -103,7 +97,7 @@ func doRequest(req *ParsedRequest) (int, []byte, error) {
 
 func tryFormatJSON(body []byte) []byte {
 	var out bytes.Buffer
-	if err := json.Indent(&out, body, "", jsIndent); err != nil {
+	if err := json.Indent(&out, body, "", app.JsIndent); err != nil {
 		return body
 	}
 	return out.Bytes()
@@ -115,15 +109,20 @@ func runQuery() error {
 		return err
 	}
 	defer file.Close()
-	request, err := parseScript(file)
+	request, err := app.ParseScript(file)
 	if err != nil {
 		return err
 	}
 
-	if sel, err := tryParseStdinAsync(); err == nil {
-		request.URI = sel.URI
-		request.Method = sel.Method
-		request.bodyLines = sel.bodyLines
+	if sel, err := app.TryParseStdinAsync(); err == nil {
+		// got the whole query file or it is enough input to use parsed data from stdin
+		if sel.Validate() == nil {
+			request = sel
+		} else {
+			request.URI = sel.URI
+			request.Method = sel.Method
+			request.CopyBodyFrom(sel)
+		}
 	}
 
 	if err := request.Validate(); err != nil {
@@ -146,8 +145,8 @@ func runQuery() error {
 	return err
 }
 
-func help() error {
-	data := MustAsset(templateAsset)
+func example() error {
+	data := app.MustAsset(app.TemplateAsset)
 	fmt.Fprintln(os.Stdout, string(data))
 	return nil
 }
@@ -161,11 +160,11 @@ func doCmd() error {
 	if action == "run" {
 		return runQuery()
 	}
-	if action == "help" {
-		return help()
+	if action == "example" {
+		return example()
 	}
 	if action == "fmt" {
-		return jsonFormat(os.Stdin, os.Stdout, false)
+		return app.JsonFormat(os.Stdin, os.Stdout, false)
 	}
 
 	return fmt.Errorf("Unknown action: %s", action)
@@ -179,13 +178,13 @@ func errorf(format string, args ...interface{}) {
 func main() {
 
 	if err := doCmd(); err != nil {
-		if err == errIndentFailed {
+		if err == app.ErrFormatFailed {
 			os.Exit(1)
 		}
 
 		switch err := err.(type) {
 		case *exec.ExitError:
-		case *JsonifyError:
+		case *app.JsonifyError:
 			if syntaxErr, ok := err.Inner.(*json.SyntaxError); ok {
 				errorf("Bad JSON query: %s", err)
 				fmt.Fprintf(os.Stderr, "%s\n", color.RedString(err.Highlighted(syntaxErr.Offset)))

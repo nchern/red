@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"bytes"
@@ -11,11 +11,11 @@ const (
 )
 
 func TestParse(t *testing.T) {
-	src := MustAsset(templateAsset)
+	src := MustAsset(TemplateAsset)
 
-	result, err := parseScript(bytes.NewBuffer(src))
+	result, err := ParseScript(bytes.NewBuffer(src))
 	if err != nil {
-		t.Errorf("parseScript returned %s", err)
+		t.Errorf("ParseScript returned %s", err)
 	}
 
 	if err := result.Validate(); err != nil {
@@ -50,9 +50,9 @@ func TestParse(t *testing.T) {
 
 func TestParseEmptyRequestBody(t *testing.T) {
 	selected := "POST /foo/bar"
-	result, err := parseScript(bytes.NewBuffer([]byte(selected)))
+	result, err := ParseScript(bytes.NewBuffer([]byte(selected)))
 	if err != nil {
-		t.Errorf("parseScript returned %s", err)
+		t.Errorf("ParseScript returned %s", err)
 	}
 	body, err := result.JSON()
 	if err != nil {
@@ -68,9 +68,9 @@ func TestParsePartial(t *testing.T) {
 	POST /foo/bar
 	{"size":10,"query":{"term":{"field":"value"}}}
 	`
-	result, err := parseScript(bytes.NewBuffer([]byte(selected)))
+	result, err := ParseScript(bytes.NewBuffer([]byte(selected)))
 	if err != nil {
-		t.Errorf("parseScript returned %s", err)
+		t.Errorf("ParseScript returned %s", err)
 	}
 
 	if result.Method != "POST" {
@@ -83,13 +83,13 @@ func TestParsePartial(t *testing.T) {
 }
 
 func TestParseErrors(t *testing.T) {
-	if _, err := parseScript(bytes.NewBuffer([]byte("GET"))); err == nil {
+	if _, err := ParseScript(bytes.NewBuffer([]byte("GET"))); err == nil {
 		t.Errorf("Must return an error")
 	}
 
-	result, err := parseScript(bytes.NewBuffer([]byte("")))
+	result, err := ParseScript(bytes.NewBuffer([]byte("")))
 	if err != nil {
-		t.Errorf("parseScript returned %s", err)
+		t.Errorf("ParseScript returned %s", err)
 	}
 	if err := result.Validate(); err == nil {
 		t.Errorf("Must be invalid")

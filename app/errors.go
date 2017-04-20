@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"errors"
@@ -7,8 +7,9 @@ import (
 )
 
 var (
+	ErrFormatFailed = errors.New("Failed to format json")
+
 	errNotARequestString = errors.New("Not a request string")
-	errIndentFailed      = errors.New("Failed to format json")
 	errBadRequestString  = errors.New("Bad formatted request string. Must be in a form: <METHOD> /<index>/<action>")
 )
 

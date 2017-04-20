@@ -1,7 +1,7 @@
 RED (Request EDitor)
 ==
 
-RED is a Console User Interface(CUI) that helps to make HTTP requests to different APIs from your favourite console text editor.
+RED is a Console User Interface(CUI) that helps to make HTTP requests to different APIs from your favourite console text editor. You can think of it like a notebook for API requests.
 Alpha version, tested with Vim only ;)
 In the current version empty or JSON request body is supported. 
 
@@ -25,6 +25,9 @@ red example # Outputs self-explainable query file body. You can get an idea abou
 
 Screenshots
 ====
+![Overview](https://github.com/nchern/red/blob/master/assets/general.png)
+
+![Query selection example](https://github.com/nchern/red/blob/master/assets/selection.png)
 
 Vim hints
 ===

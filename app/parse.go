@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"bufio"
@@ -14,11 +14,16 @@ import (
 
 const (
 	terminateParseToken = ">>>EOF<<<"
+	TemplateAsset       = "assets/template.txt"
 )
 
-var errTimeout = errors.New("timeout")
+var (
+	errTimeout  = errors.New("timeout")
+	defaultHost = "http://localhost:9200"
+	methods     = []string{"GET", "POST", "DELETE", "PUT"}
+)
 
-func tryParseStdinAsync() (*ParsedRequest, error) {
+func TryParseStdinAsync() (*ParsedRequest, error) {
 	var err error
 	var selection *ParsedRequest
 	var buf bytes.Buffer
@@ -28,7 +33,7 @@ func tryParseStdinAsync() (*ParsedRequest, error) {
 	finished := make(chan bool)
 
 	go func() {
-		selection, err = parseScript(tee)
+		selection, err = ParseScript(tee)
 		finished <- true
 	}()
 
@@ -58,7 +63,7 @@ func tryParseRequestString(line string, req *ParsedRequest) error {
 	return errNotARequestString
 }
 
-func parseScript(reader io.Reader) (*ParsedRequest, error) {
+func ParseScript(reader io.Reader) (*ParsedRequest, error) {
 	result := &ParsedRequest{}
 
 	i := 0
@@ -82,7 +87,8 @@ func parseScript(reader io.Reader) (*ParsedRequest, error) {
 		}
 		if err := tryParseRequestString(normalizedLine, result); err != nil {
 			if err != errNotARequestString {
-				return nil, &ParseError{n: i, msg: err.Error(), filename: queryFilePath}
+				//TODO: filename: queryFilePath
+				return nil, &ParseError{n: i, msg: err.Error()}
 			}
 		} else {
 			continue
@@ -107,6 +113,10 @@ type ParsedRequest struct {
 
 func NewParsedRequest() *ParsedRequest {
 	return &ParsedRequest{Host: defaultHost}
+}
+
+func (r *ParsedRequest) CopyBodyFrom(src *ParsedRequest) {
+	r.bodyLines = src.bodyLines
 }
 
 func (r *ParsedRequest) RawBody() string {

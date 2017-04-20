@@ -5,7 +5,7 @@ install-deps:
 	go get -u github.com/jteeuwen/go-bindata/...
 
 bindata:
-	go-bindata assets
+	go-bindata -pkg app -o app/bindata.go assets
 
 install: bindata
 	go get ./...

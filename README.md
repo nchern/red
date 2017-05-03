@@ -25,9 +25,9 @@ red example # Outputs self-explainable query file body. You can get an idea abou
 
 Screenshots
 ====
-![Overview](https://github.com/nchern/red/blob/master/assets/general.png)
+![Overview](https://github.com/nchern/red/blob/master/screenshots/general.png)
 
-![Query selection example](https://github.com/nchern/red/blob/master/assets/selection.png)
+![Query selection example](https://github.com/nchern/red/blob/master/screenshots/selection.png)
 
 Vim hints
 ===

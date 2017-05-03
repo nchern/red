@@ -137,7 +137,7 @@ func runQuery() error {
 		return err
 	}
 
-	if _, err := fmt.Fprintf(w, "#> %d %s %s\n\n", code, request.Method, request.URI); err != nil {
+	if _, err := fmt.Fprintf(w, "#> %d %s %s\n\n", code, request.Method, request.Url()); err != nil {
 		return err
 	}
 

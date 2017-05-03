@@ -164,6 +164,11 @@ func (r *ParsedRequest) JSON() (string, error) {
 	}
 	var obj struct{}
 	if err := json.Unmarshal([]byte(src), &obj); err != nil {
+		// try if it is a json array
+		var obj []struct{}
+		if err := json.Unmarshal([]byte(src), &obj); err == nil {
+			return src, nil
+		}
 		return "", &JsonifyError{Source: src, Inner: err}
 	}
 

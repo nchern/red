@@ -2,6 +2,7 @@ package app
 
 import (
 	"bytes"
+	"reflect"
 	"regexp"
 	"testing"
 )
@@ -79,6 +80,9 @@ func TestParsePartial(t *testing.T) {
 	if result.URI != "/foo/bar" {
 		t.Errorf("Incorrect URI: '%s'", result.URI)
 	}
+	if _, err := result.JSON(); err != nil {
+		t.Errorf("Must be valid json but got: %s", err)
+	}
 
 }
 
@@ -93,5 +97,28 @@ func TestParseErrors(t *testing.T) {
 	}
 	if err := result.Validate(); err == nil {
 		t.Errorf("Must be invalid")
+	}
+}
+
+func TestParseJsonTopLevelArray(t *testing.T) {
+	selected := `
+	POST /foo/bar
+	[
+		{"size":10}
+	]
+	`
+	result, err := ParseScript(bytes.NewBuffer([]byte(selected)))
+	if err != nil {
+		t.Errorf("ParseScript returned %s", err)
+	}
+
+	if result.Method != "POST" {
+		t.Errorf("Incorrect method: '%s'", result.Method)
+	}
+	if result.URI != "/foo/bar" {
+		t.Errorf("Incorrect URI: '%s'", result.URI)
+	}
+	if _, err := result.JSON(); err != nil {
+		t.Errorf("Must be valid json but got: %s %s", err, reflect.TypeOf(err))
 	}
 }

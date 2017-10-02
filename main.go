@@ -33,6 +33,15 @@ var (
 	outFilePath   = path.Join(appHomePath, outFilename)
 )
 
+type response struct {
+	Code int
+	Body []byte
+
+	Request *app.ParsedRequest
+
+	Err error
+}
+
 func notEmpty(val, defaultVal string) string {
 	if val != "" {
 		return val
@@ -109,6 +118,7 @@ func runQuery() error {
 		return err
 	}
 	defer file.Close()
+
 	request, err := app.ParseScript(file)
 	if err != nil {
 		return err
@@ -128,11 +138,14 @@ func runQuery() error {
 	if err := request.Validate(); err != nil {
 		return err
 	}
-	code, body, err := doRequest(request)
+
+	w, err := os.Create(outFilePath)
 	if err != nil {
 		return err
 	}
-	w, err := os.Create(outFilePath)
+	defer w.Close()
+
+	code, body, err := doRequest(request)
 	if err != nil {
 		return err
 	}
@@ -142,6 +155,21 @@ func runQuery() error {
 	}
 
 	_, err = w.Write(body)
+	return err
+}
+
+func output(r *response) error {
+	w, err := os.Create(outFilePath)
+	if err != nil {
+		return err
+	}
+	defer w.Close()
+
+	if _, err := fmt.Fprintf(w, "#> %d %s %s\n\n", r.Code, r.Request.Method, r.Request.Url()); err != nil {
+		return err
+	}
+
+	_, err = w.Write(r.Body)
 	return err
 }
 

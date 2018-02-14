@@ -85,7 +85,7 @@ func doRequest(req *app.ParsedRequest) (int, []byte, error) {
 		Timeout: 3 * time.Second,
 	}
 
-	httpReq, err := http.NewRequest(req.Method, req.Url(), bytes.NewBufferString(src))
+	httpReq, err := http.NewRequest(req.Method, req.URL(), bytes.NewBufferString(src))
 	if err != nil {
 		return 0, nil, err
 	}
@@ -150,7 +150,7 @@ func runQuery() error {
 		return err
 	}
 
-	if _, err := fmt.Fprintf(w, "#> %d %s %s\n\n", code, request.Method, request.Url()); err != nil {
+	if _, err := fmt.Fprintf(w, "#> %d %s %s\n\n", code, request.Method, request.URL()); err != nil {
 		return err
 	}
 
@@ -165,7 +165,7 @@ func output(r *response) error {
 	}
 	defer w.Close()
 
-	if _, err := fmt.Fprintf(w, "#> %d %s %s\n\n", r.Code, r.Request.Method, r.Request.Url()); err != nil {
+	if _, err := fmt.Fprintf(w, "#> %d %s %s\n\n", r.Code, r.Request.Method, r.Request.URL()); err != nil {
 		return err
 	}
 
@@ -192,7 +192,7 @@ func doCmd() error {
 		return example()
 	}
 	if action == "fmt" {
-		return app.JsonFormat(os.Stdin, os.Stdout, false)
+		return app.JSONFormat(os.Stdin, os.Stdout, false)
 	}
 
 	return fmt.Errorf("Unknown action: %s", action)

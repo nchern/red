@@ -34,8 +34,8 @@ func TestParse(t *testing.T) {
 	if result.URI != "/foo/_search" {
 		t.Errorf("Incorrect URI: '%s'", result.URI)
 	}
-	if result.Url() != "http://localhost:9200/foo/_search" {
-		t.Errorf("Incorrect Url(): '%s'", result.Url())
+	if result.URL() != "http://localhost:9200/foo/_search" {
+		t.Errorf("Incorrect Url(): '%s'", result.URL())
 	}
 
 	json, err := result.JSON()

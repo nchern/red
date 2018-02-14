@@ -13,7 +13,7 @@ var (
 	JsIndent = "   "
 )
 
-func JsonFormat(reader io.Reader, writer io.Writer, verbose bool) error {
+func JSONFormat(reader io.Reader, writer io.Writer, verbose bool) error {
 	body, err := ioutil.ReadAll(reader)
 	if err != nil {
 		return err

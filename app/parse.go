@@ -123,7 +123,7 @@ func (r *ParsedRequest) RawBody() string {
 	return strings.Join(r.bodyLines, "\n")
 }
 
-func (r *ParsedRequest) Url() string {
+func (r *ParsedRequest) URL() string {
 	url := r.Host + r.URI
 	if !strings.HasPrefix(url, "http://") {
 		url = "http://" + url

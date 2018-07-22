@@ -1,3 +1,5 @@
+[![Go Report Card](https://goreportcard.com/badge/github.com/nchern/red)](https://goreportcard.com/report/github.com/nchern/red)
+
 RED (Request EDitor)
 ==
 

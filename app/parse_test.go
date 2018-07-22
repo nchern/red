@@ -14,7 +14,7 @@ const (
 func TestParse(t *testing.T) {
 	src := MustAsset(TemplateAsset)
 
-	result, err := ParseScript(bytes.NewBuffer(src))
+	result, err := ParseRequest(bytes.NewBuffer(src))
 	if err != nil {
 		t.Errorf("ParseScript returned %s", err)
 	}
@@ -42,7 +42,7 @@ func TestParse(t *testing.T) {
 	if err != nil {
 		t.Errorf("Malformed json: %s", err)
 	}
-	rx := regexp.MustCompile("\\s")
+	rx := regexp.MustCompile(`\s`)
 	json = rx.ReplaceAllString(json, "")
 	if json != expectedBody {
 		t.Errorf("Unexpected json: [%s]", json)
@@ -51,7 +51,7 @@ func TestParse(t *testing.T) {
 
 func TestParseEmptyRequestBody(t *testing.T) {
 	selected := "POST /foo/bar"
-	result, err := ParseScript(bytes.NewBuffer([]byte(selected)))
+	result, err := ParseRequest(bytes.NewBuffer([]byte(selected)))
 	if err != nil {
 		t.Errorf("ParseScript returned %s", err)
 	}
@@ -69,7 +69,7 @@ func TestParsePartial(t *testing.T) {
 	POST /foo/bar
 	{"size":10,"query":{"term":{"field":"value"}}}
 	`
-	result, err := ParseScript(bytes.NewBuffer([]byte(selected)))
+	result, err := ParseRequest(bytes.NewBuffer([]byte(selected)))
 	if err != nil {
 		t.Errorf("ParseScript returned %s", err)
 	}
@@ -87,11 +87,11 @@ func TestParsePartial(t *testing.T) {
 }
 
 func TestParseErrors(t *testing.T) {
-	if _, err := ParseScript(bytes.NewBuffer([]byte("GET"))); err == nil {
+	if _, err := ParseRequest(bytes.NewBuffer([]byte("GET"))); err == nil {
 		t.Errorf("Must return an error")
 	}
 
-	result, err := ParseScript(bytes.NewBuffer([]byte("")))
+	result, err := ParseRequest(bytes.NewBuffer([]byte("")))
 	if err != nil {
 		t.Errorf("ParseScript returned %s", err)
 	}
@@ -107,7 +107,7 @@ func TestParseJsonTopLevelArray(t *testing.T) {
 		{"size":10}
 	]
 	`
-	result, err := ParseScript(bytes.NewBuffer([]byte(selected)))
+	result, err := ParseRequest(bytes.NewBuffer([]byte(selected)))
 	if err != nil {
 		t.Errorf("ParseScript returned %s", err)
 	}

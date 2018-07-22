@@ -37,7 +37,7 @@ type response struct {
 	Code int
 	Body []byte
 
-	Request *app.ParsedRequest
+	Request *app.HTTPRequest
 
 	Err error
 }
@@ -76,7 +76,7 @@ func openEditor() error {
 	return cmd.Run()
 }
 
-func doRequest(req *app.ParsedRequest) (int, []byte, error) {
+func doRequest(req *app.HTTPRequest) (int, []byte, error) {
 	src, err := req.JSON()
 	if err != nil {
 		return 0, nil, err
@@ -119,7 +119,7 @@ func runQuery() error {
 	}
 	defer file.Close()
 
-	request, err := app.ParseScript(file)
+	request, err := app.ParseRequest(file)
 	if err != nil {
 		return err
 	}

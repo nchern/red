@@ -14,7 +14,9 @@ import (
 
 const (
 	terminateParseToken = ">>>EOF<<<"
-	TemplateAsset       = "assets/template.txt"
+
+	// TemplateAsset sets path to template text bin asset
+	TemplateAsset = "assets/template.txt"
 )
 
 var (
@@ -23,9 +25,10 @@ var (
 	methods     = []string{"GET", "POST", "DELETE", "PUT"}
 )
 
-func TryParseStdinAsync() (*ParsedRequest, error) {
+// TryParseStdinAsync parses stdin and times out if stdin is open and empty
+func TryParseStdinAsync() (*HTTPRequest, error) {
 	var err error
-	var selection *ParsedRequest
+	var selection *HTTPRequest
 	var buf bytes.Buffer
 
 	tee := io.TeeReader(os.Stdin, &buf)
@@ -33,7 +36,7 @@ func TryParseStdinAsync() (*ParsedRequest, error) {
 	finished := make(chan bool)
 
 	go func() {
-		selection, err = ParseScript(tee)
+		selection, err = ParseRequest(tee)
 		finished <- true
 	}()
 
@@ -48,7 +51,7 @@ func TryParseStdinAsync() (*ParsedRequest, error) {
 	return selection, err
 }
 
-func tryParseRequestString(line string, req *ParsedRequest) error {
+func tryParseRequestString(line string, req *HTTPRequest) error {
 	for _, method := range methods {
 		if !strings.HasPrefix(line, method) {
 			continue
@@ -63,8 +66,9 @@ func tryParseRequestString(line string, req *ParsedRequest) error {
 	return errNotARequestString
 }
 
-func ParseScript(reader io.Reader) (*ParsedRequest, error) {
-	result := &ParsedRequest{}
+// ParseRequest parses request info from the given reader
+func ParseRequest(reader io.Reader) (*HTTPRequest, error) {
+	result := newHTTPRequest()
 
 	i := 0
 	scanner := bufio.NewScanner(reader)
@@ -88,7 +92,7 @@ func ParseScript(reader io.Reader) (*ParsedRequest, error) {
 		if err := tryParseRequestString(normalizedLine, result); err != nil {
 			if err != errNotARequestString {
 				//TODO: filename: queryFilePath
-				return nil, &ParseError{n: i, msg: err.Error()}
+				return nil, &parseError{n: i, msg: err.Error()}
 			}
 		} else {
 			continue
@@ -103,7 +107,8 @@ func ParseScript(reader io.Reader) (*ParsedRequest, error) {
 	return result, nil
 }
 
-type ParsedRequest struct {
+// HTTPRequest represents the request to be made
+type HTTPRequest struct {
 	Host   string
 	Method string
 	URI    string
@@ -111,19 +116,21 @@ type ParsedRequest struct {
 	bodyLines []string
 }
 
-func NewParsedRequest() *ParsedRequest {
-	return &ParsedRequest{Host: defaultHost}
+func newHTTPRequest() *HTTPRequest {
+	return &HTTPRequest{Host: defaultHost}
 }
 
-func (r *ParsedRequest) CopyBodyFrom(src *ParsedRequest) {
+// CopyBodyFrom copies body from src
+func (r *HTTPRequest) CopyBodyFrom(src *HTTPRequest) {
 	r.bodyLines = src.bodyLines
 }
 
-func (r *ParsedRequest) RawBody() string {
+func (r *HTTPRequest) rawBody() string {
 	return strings.Join(r.bodyLines, "\n")
 }
 
-func (r *ParsedRequest) URL() string {
+// URL returns url
+func (r *HTTPRequest) URL() string {
 	url := r.Host + r.URI
 	if !strings.HasPrefix(url, "http://") {
 		url = "http://" + url
@@ -131,20 +138,8 @@ func (r *ParsedRequest) URL() string {
 	return url
 }
 
-/*
-func (r *ParsedRequest) Merge(src *ParsedRequest) *ParsedRequest {
-	r.Host = notEmpty(src.Host, r.Host)
-	r.Method = notEmpty(src.Method, r.Method)
-	r.URI = notEmpty(src.URI, r.URI)
-
-	if len(src.bodyLines) > 0 {
-		r.bodyLines = src.bodyLines
-	}
-	return r
-}
-*/
-
-func (r *ParsedRequest) Validate() error {
+// Validate validates the request
+func (r *HTTPRequest) Validate() error {
 	if r.Host == "" {
 		return fmt.Errorf("Host is empty")
 	}
@@ -157,8 +152,9 @@ func (r *ParsedRequest) Validate() error {
 	return nil
 }
 
-func (r *ParsedRequest) JSON() (string, error) {
-	src := r.RawBody()
+// JSON returns body as JSON
+func (r *HTTPRequest) JSON() (string, error) {
+	src := r.rawBody()
 	if src == "" {
 		return "", nil
 	}

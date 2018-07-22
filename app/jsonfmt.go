@@ -10,9 +10,11 @@ import (
 )
 
 var (
+	// JsIndent is the identation used to format JSON
 	JsIndent = "   "
 )
 
+// JSONFormat formats json input in the reader and writes the formatted output to writer
 func JSONFormat(reader io.Reader, writer io.Writer, verbose bool) error {
 	body, err := ioutil.ReadAll(reader)
 	if err != nil {

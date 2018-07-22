@@ -7,6 +7,7 @@ import (
 )
 
 var (
+	// ErrFormatFailed indicates that JSON chunk can not be formatted
 	ErrFormatFailed = errors.New("Failed to format json")
 
 	errNotARequestString = errors.New("Not a request string")
@@ -21,16 +22,17 @@ func findPrevLineIndex(s string, offset int) int {
 	return prefixIdx
 }
 
-type ParseError struct {
+type parseError struct {
 	n        int
 	msg      string
 	filename string
 }
 
-func (e *ParseError) Error() string {
+func (e *parseError) Error() string {
 	return fmt.Sprintf("%s:#%d: %s", e.filename, e.n, e.msg)
 }
 
+// JsonifyError describes the invalid request body that must be a valid json
 type JsonifyError struct {
 	Inner  error
 	Source string
@@ -38,6 +40,7 @@ type JsonifyError struct {
 
 func (e *JsonifyError) Error() string { return e.Inner.Error() }
 
+// Highlighted returns the problematic json part that caused the error
 func (e *JsonifyError) Highlighted(offset int64) string {
 	prefixIdx := findPrevLineIndex(e.Source, int(offset))
 	prefixIdx = findPrevLineIndex(e.Source[:prefixIdx], prefixIdx)

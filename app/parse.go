@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 	"strings"
 	"time"
 )
@@ -17,6 +16,8 @@ const (
 
 	// TemplateAsset sets path to template text bin asset
 	TemplateAsset = "assets/template.txt"
+
+	parseTimeout = 50 * time.Millisecond
 )
 
 var (
@@ -24,88 +25,6 @@ var (
 	defaultHost = "http://localhost:9200"
 	methods     = []string{"GET", "POST", "DELETE", "PUT"}
 )
-
-// TryParseStdinAsync parses stdin and times out if stdin is open and empty
-func TryParseStdinAsync() (*HTTPRequest, error) {
-	var err error
-	var selection *HTTPRequest
-	var buf bytes.Buffer
-
-	tee := io.TeeReader(os.Stdin, &buf)
-
-	finished := make(chan bool)
-
-	go func() {
-		selection, err = ParseRequest(tee)
-		finished <- true
-	}()
-
-	select {
-	case <-finished:
-		// Mirror stdin to stout - this allows processing selections in vim correctly
-		os.Stdout.Write(buf.Bytes())
-	case <-time.After(50 * time.Millisecond):
-		return nil, errTimeout
-	}
-
-	return selection, err
-}
-
-func tryParseRequestString(line string, req *HTTPRequest) error {
-	for _, method := range methods {
-		if !strings.HasPrefix(line, method) {
-			continue
-		}
-		req.Method = method
-		req.URI = strings.TrimSpace(strings.TrimPrefix(line, method))
-		if req.URI == "" {
-			return errBadRequestString
-		}
-		return nil
-	}
-	return errNotARequestString
-}
-
-// ParseRequest parses request info from the given reader
-func ParseRequest(reader io.Reader) (*HTTPRequest, error) {
-	result := newHTTPRequest()
-
-	i := 0
-	scanner := bufio.NewScanner(reader)
-	for scanner.Scan() {
-		i++
-		line := scanner.Text()
-		normalizedLine := strings.TrimSpace(line)
-		if normalizedLine == "" {
-			continue
-		}
-		if strings.HasPrefix(normalizedLine, "#") {
-			continue
-		}
-		if strings.HasPrefix(normalizedLine, "@") {
-			result.Host = normalizedLine[1:]
-			continue
-		}
-		if normalizedLine == terminateParseToken {
-			break
-		}
-		if err := tryParseRequestString(normalizedLine, result); err != nil {
-			if err != errNotARequestString {
-				//TODO: filename: queryFilePath
-				return nil, &parseError{n: i, msg: err.Error()}
-			}
-		} else {
-			continue
-		}
-		result.bodyLines = append(result.bodyLines, line)
-	}
-
-	if err := scanner.Err(); err != nil {
-		return nil, err
-	}
-
-	return result, nil
-}
 
 // HTTPRequest represents the request to be made
 type HTTPRequest struct {
@@ -169,4 +88,86 @@ func (r *HTTPRequest) JSON() (string, error) {
 	}
 
 	return src, nil
+}
+
+// TryParseAsync parses stdin and times out if stdin is open and empty
+func TryParseAsync(src io.Reader, out io.Writer) (*HTTPRequest, error) {
+	var err error
+	var selection *HTTPRequest
+	var buf bytes.Buffer
+
+	tee := io.TeeReader(src, &buf)
+
+	finished := make(chan bool)
+
+	go func() {
+		selection, err = ParseRequest(tee)
+		finished <- true
+	}()
+
+	select {
+	case <-finished:
+		// Mirror stdin to stout - this allows processing selections in vim correctly
+		out.Write(buf.Bytes())
+	case <-time.After(parseTimeout):
+		return nil, errTimeout
+	}
+
+	return selection, err
+}
+
+func tryParseRequestString(line string, req *HTTPRequest) error {
+	for _, method := range methods {
+		if !strings.HasPrefix(line, method) {
+			continue
+		}
+		req.Method = method
+		req.URI = strings.TrimSpace(strings.TrimPrefix(line, method))
+		if req.URI == "" {
+			return errBadRequestString
+		}
+		return nil
+	}
+	return errNotARequestString
+}
+
+// ParseRequest parses request info from the given reader
+func ParseRequest(reader io.Reader) (*HTTPRequest, error) {
+	result := newHTTPRequest()
+
+	i := 0
+	scanner := bufio.NewScanner(reader)
+	for scanner.Scan() {
+		i++
+		line := scanner.Text()
+		normalizedLine := strings.TrimSpace(line)
+		if normalizedLine == "" {
+			continue
+		}
+		if strings.HasPrefix(normalizedLine, "#") {
+			continue
+		}
+		if strings.HasPrefix(normalizedLine, "@") {
+			result.Host = normalizedLine[1:]
+			continue
+		}
+		if normalizedLine == terminateParseToken {
+			break
+		}
+		if err := tryParseRequestString(normalizedLine, result); err != nil {
+			if err != errNotARequestString {
+				//TODO: filename: queryFilePath
+				return nil, &parseError{n: i, msg: err.Error()}
+			}
+		} else {
+			continue
+		}
+		result.bodyLines = append(result.bodyLines, line)
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }

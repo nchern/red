@@ -124,7 +124,7 @@ func runQuery() error {
 		return err
 	}
 
-	if sel, err := app.TryParseStdinAsync(); err == nil {
+	if sel, err := app.TryParseAsync(os.Stdin, os.Stdout); err == nil {
 		// got the whole query file or it is enough input to use parsed data from stdin
 		if sel.Validate() == nil {
 			request = sel

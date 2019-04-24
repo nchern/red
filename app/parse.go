@@ -51,7 +51,7 @@ func (r *HTTPRequest) rawBody() string {
 // URL returns url
 func (r *HTTPRequest) URL() string {
 	url := r.Host + r.URI
-	if !strings.HasPrefix(url, "http://") {
+	if toks := strings.Split(url, ":"); len(toks) < 2 || !strings.HasPrefix(toks[0], "http") {
 		url = "http://" + url
 	}
 	return url

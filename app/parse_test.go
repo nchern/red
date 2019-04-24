@@ -49,6 +49,28 @@ func TestParse(t *testing.T) {
 	}
 }
 
+func TestUrlScheme(t *testing.T) {
+	var req HTTPRequest
+
+	var tests = []struct {
+		expected string
+		given    string
+	}{
+		{"http://localhost", "localhost"},
+		{"http://localhost:8080", "localhost:8080"},
+		{"http://localhost:8080", "http://localhost:8080"},
+		{"http://localhost", "http://localhost"},
+		{"https://localhost", "https://localhost"},
+	}
+	for _, tt := range tests {
+		req.Host = tt.given
+		actual := req.URL()
+		if actual != tt.expected {
+			t.Errorf("given: %s; expected %s, actual %s", tt.given, tt.expected, actual)
+		}
+	}
+}
+
 func TestParseEmptyRequestBody(t *testing.T) {
 	selected := "POST /foo/bar"
 	result, err := ParseRequest(bytes.NewBufferString(selected))

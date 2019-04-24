@@ -17,7 +17,7 @@ const (
 	// TemplateAsset sets path to template text bin asset
 	TemplateAsset = "assets/template.txt"
 
-	parseTimeout = 50 * time.Millisecond
+	parseTimeout = 100 * time.Millisecond
 )
 
 var (

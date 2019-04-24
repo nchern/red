@@ -31,16 +31,11 @@ var (
 
 	queryFilePath = path.Join(appHomePath, queryFilename)
 	outFilePath   = path.Join(appHomePath, outFilename)
+
+	client = &http.Client{
+		Timeout: 3 * time.Second,
+	}
 )
-
-type response struct {
-	Code int
-	Body []byte
-
-	Request *app.HTTPRequest
-
-	Err error
-}
 
 func notEmpty(val, defaultVal string) string {
 	if val != "" {
@@ -81,10 +76,6 @@ func doRequest(req *app.HTTPRequest) (int, []byte, error) {
 	if err != nil {
 		return 0, nil, err
 	}
-	client := &http.Client{
-		Timeout: 3 * time.Second,
-	}
-
 	httpReq, err := http.NewRequest(req.Method, req.URL(), bytes.NewBufferString(src))
 	if err != nil {
 		return 0, nil, err
@@ -155,21 +146,6 @@ func runQuery() error {
 	}
 
 	_, err = w.Write(body)
-	return err
-}
-
-func output(r *response) error {
-	w, err := os.Create(outFilePath)
-	if err != nil {
-		return err
-	}
-	defer w.Close()
-
-	if _, err := fmt.Fprintf(w, "#> %d %s %s\n\n", r.Code, r.Request.Method, r.Request.URL()); err != nil {
-		return err
-	}
-
-	_, err = w.Write(r.Body)
 	return err
 }
 

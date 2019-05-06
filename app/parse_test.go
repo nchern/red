@@ -9,12 +9,31 @@ import (
 
 const (
 	expectedBody = `{"size":10,"query":{"term":{"field":"value"}}}`
+
+	srcUnderTest = `
+@localhost:9200
+
+# HELP:
+# '@<hostname>:9200' at the begining of a line sets server host:port to make request to
+# <METHOD> /foo/bar at the begining of a line sets request METHOD/URI a for the query
+# >>>EOF<<< at the begining of a line stops parsing the source
+
+
+# Example of Elasticsearch query
+
+GET /foo/_search
+{
+    "size": 10,
+    "query": {
+        "term": {
+            "field": "value"
+        }
+    }
+}`
 )
 
 func TestParse(t *testing.T) {
-	src := MustAsset(TemplateAsset)
-
-	result, err := ParseRequest(bytes.NewBuffer(src))
+	result, err := ParseRequest(bytes.NewBufferString(srcUnderTest))
 	if err != nil {
 		t.Errorf("ParseScript returned %s", err)
 	}

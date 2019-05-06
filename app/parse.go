@@ -21,9 +21,8 @@ const (
 )
 
 var (
-	errTimeout  = errors.New("timeout")
-	defaultHost = "http://localhost:9200"
-	methods     = []string{"GET", "POST", "DELETE", "PUT"}
+	errTimeout = errors.New("timeout")
+	methods    = []string{"GET", "POST", "DELETE", "PUT"}
 )
 
 // HTTPRequest represents the request to be made
@@ -36,7 +35,7 @@ type HTTPRequest struct {
 }
 
 func newHTTPRequest() *HTTPRequest {
-	return &HTTPRequest{Host: defaultHost}
+	return &HTTPRequest{}
 }
 
 // CopyBodyFrom copies body from src

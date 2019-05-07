@@ -37,8 +37,6 @@ A couple of convenient shortcuts could be added to `~/.vimrc`
 ```
 " runs a query
 command! -range=% DoQuery :<line1>,<line2>!red run
-" tries to format json with red; not a proper json will be left unmodified
-command! -range JsonFmt :<line1>,<line2>!red fmt
 ```
 
 Other editors support

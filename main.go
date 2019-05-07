@@ -19,6 +19,8 @@ import (
 
 const (
 	filenameBase = "query"
+
+	jsonIndent = "   "
 )
 
 var (
@@ -97,7 +99,7 @@ func doRequest(req *app.HTTPRequest) (int, []byte, error) {
 
 func tryFormatJSON(body []byte) []byte {
 	var out bytes.Buffer
-	if err := json.Indent(&out, body, "", app.JsIndent); err != nil {
+	if err := json.Indent(&out, body, "", jsonIndent); err != nil {
 		return body
 	}
 	return out.Bytes()
@@ -166,9 +168,6 @@ func doCmd() error {
 	}
 	if action == "example" {
 		return example()
-	}
-	if action == "fmt" {
-		return app.JSONFormat(os.Stdin, os.Stdout, false)
 	}
 
 	return fmt.Errorf("Unknown action: %s", action)

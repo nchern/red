@@ -106,13 +106,13 @@ func tryFormatJSON(body []byte) []byte {
 }
 
 func runQuery() error {
-	file, err := os.Open(queryFilePath)
+	srcFile, err := os.Open(queryFilePath)
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer srcFile.Close()
 
-	request, err := app.ParseRequest(file)
+	request, err := app.ParseRequest(srcFile)
 	if err != nil {
 		return err
 	}

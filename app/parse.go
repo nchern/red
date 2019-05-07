@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"strings"
 	"time"
 )
@@ -31,11 +32,13 @@ type HTTPRequest struct {
 	Method string
 	URI    string
 
+	Headers http.Header
+
 	bodyLines []string
 }
 
 func newHTTPRequest() *HTTPRequest {
-	return &HTTPRequest{}
+	return &HTTPRequest{Headers: http.Header{}}
 }
 
 // CopyBodyFrom copies body from src
@@ -89,6 +92,21 @@ func (r *HTTPRequest) JSON() (string, error) {
 	return src, nil
 }
 
+func (r *HTTPRequest) tryParseRequestString(line string) error {
+	for _, method := range methods {
+		if !strings.HasPrefix(line, method) {
+			continue
+		}
+		r.Method = method
+		r.URI = strings.TrimSpace(strings.TrimPrefix(line, method))
+		if r.URI == "" {
+			return errBadRequestString
+		}
+		return nil
+	}
+	return errNotARequestString
+}
+
 // TryParseAsync parses stdin and times out if stdin is open and empty
 func TryParseAsync(src io.Reader, out io.Writer) (*HTTPRequest, error) {
 	var err error
@@ -115,53 +133,49 @@ func TryParseAsync(src io.Reader, out io.Writer) (*HTTPRequest, error) {
 	return selection, err
 }
 
-func tryParseRequestString(line string, req *HTTPRequest) error {
-	for _, method := range methods {
-		if !strings.HasPrefix(line, method) {
-			continue
-		}
-		req.Method = method
-		req.URI = strings.TrimSpace(strings.TrimPrefix(line, method))
-		if req.URI == "" {
-			return errBadRequestString
-		}
-		return nil
-	}
-	return errNotARequestString
-}
-
 // ParseRequest parses request info from the given reader
 func ParseRequest(reader io.Reader) (*HTTPRequest, error) {
 	result := newHTTPRequest()
 
 	i := 0
+	isBodyStarted := false
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
 		i++
 		line := scanner.Text()
 		normalizedLine := strings.TrimSpace(line)
-		if normalizedLine == "" {
-			continue
-		}
-		if strings.HasPrefix(normalizedLine, "#") {
-			continue
-		}
-		if strings.HasPrefix(normalizedLine, "@") {
-			result.Host = normalizedLine[1:]
-			continue
-		}
 		if normalizedLine == terminateParseToken {
 			break
 		}
-		if err := tryParseRequestString(normalizedLine, result); err != nil {
-			if err != errNotARequestString {
-				//TODO: filename: queryFilePath
-				return nil, &parseError{n: i, msg: err.Error()}
+		if !isBodyStarted {
+			if normalizedLine == "" {
+				continue
 			}
-		} else {
-			continue
+			if strings.HasPrefix(normalizedLine, "#") {
+				continue
+			}
+			if strings.HasPrefix(normalizedLine, "@") {
+				result.Host = normalizedLine[1:]
+				continue
+			}
+			if strings.Index(normalizedLine, ":") > -1 {
+				// parse header
+				tokens := strings.SplitN(normalizedLine, ":", 2)
+				tokens[0], tokens[1] = strings.TrimSpace(tokens[0]), strings.TrimSpace(tokens[1])
+				result.Headers.Add(tokens[0], tokens[1])
+				continue
+			}
+			if err := result.tryParseRequestString(normalizedLine); err != nil {
+				if err != errNotARequestString {
+					//TODO: filename: queryFilePath
+					return nil, &parseError{n: i, msg: err.Error()}
+				}
+			} else {
+				continue
+			}
 		}
 		result.bodyLines = append(result.bodyLines, line)
+		isBodyStarted = true
 	}
 
 	if err := scanner.Err(); err != nil {

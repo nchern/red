@@ -68,6 +68,42 @@ func TestParse(t *testing.T) {
 	}
 }
 
+func TestParseWithHeaders(t *testing.T) {
+	srcWithHeaders := `
+POST /bar/_search
+X-Request-ID: foobar
+Accept-Encoding: en-US
+
+{
+    "size": 10,
+}`
+	result, err := ParseRequest(bytes.NewBufferString(srcWithHeaders))
+	if err != nil {
+		t.Errorf("ParseScript returned %s", err)
+	}
+
+	if result.Host != "" {
+		t.Errorf("Incorrect host: '%s'", result.Host)
+	}
+
+	if result.Method != "POST" {
+		t.Errorf("Incorrect method: '%s'", result.Method)
+	}
+	if result.URI != "/bar/_search" {
+		t.Errorf("Incorrect URI: '%s'", result.URI)
+	}
+
+	if result.Headers.Get("X-Request-ID") != "foobar" {
+		t.Errorf("Bad or unexpected headers: '%+v'", result.Headers)
+	}
+	if result.Headers.Get("Accept-Encoding") != "en-US" {
+		t.Errorf("Bad or unexpected headers: '%+v'", result.Headers)
+	}
+	if len(result.Headers) != 2 {
+		t.Errorf("Bad or unexpected headers: '%+v'", result.Headers)
+	}
+}
+
 func TestUrlScheme(t *testing.T) {
 	var req HTTPRequest
 

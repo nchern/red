@@ -80,7 +80,7 @@ func doRequest(req *app.HTTPRequest) (int, []byte, error) {
 	if err != nil {
 		return 0, nil, err
 	}
-
+	httpReq.Header = req.Headers
 	resp, err := client.Do(httpReq)
 	if err != nil {
 		return 0, nil, err

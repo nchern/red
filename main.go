@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -105,14 +106,9 @@ func tryFormatJSON(body []byte) []byte {
 	return out.Bytes()
 }
 
-func runQuery() error {
-	srcFile, err := os.Open(queryFilePath)
-	if err != nil {
-		return err
-	}
-	defer srcFile.Close()
+func runQuery(srcReader io.Reader) error {
 
-	request, err := app.ParseRequest(srcFile)
+	request, err := app.ParseRequest(srcReader)
 	if err != nil {
 		return err
 	}
@@ -164,7 +160,12 @@ func doCmd() error {
 
 	action := os.Args[1]
 	if action == "run" {
-		return runQuery()
+		srcReader, err := os.Open(queryFilePath)
+		if err != nil {
+			return err
+		}
+		defer srcReader.Close()
+		return runQuery(srcReader)
 	}
 	if action == "example" {
 		return example()

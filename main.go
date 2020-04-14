@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -19,16 +20,17 @@ import (
 )
 
 const (
-	filenameBase = "query"
-
 	jsonIndent = "   "
+
+	filenameBase = "query"
 )
 
 var (
 	editor      = env("EDITOR", "vim")
 	editorFlags = env("EDITOR_FLAGS", "-O")
 
-	appHomePath   = path.Join(os.Getenv("HOME"), ".red")
+	appHomePath = path.Join(os.Getenv("HOME"), ".red")
+
 	queryFilename = filenameBase + ".txt"
 	outFilename   = filenameBase + ".out"
 
@@ -38,21 +40,20 @@ var (
 	client = &http.Client{
 		Timeout: 3 * time.Second,
 	}
+
+	flagCmd = flag.String("c", "edit", "Command to exectue. One of: edit, run, example")
+
+	// opens the editor of preference to edit requests
+	cmdEdit = "edit"
+
+	// runs a given query, either from stdin or a query file(TODO: make it accept "-")
+	cmdRun = "run"
+
+	// prints out example of request file
+	cmdExample = "example"
 )
 
-func notEmpty(val, defaultVal string) string {
-	if val != "" {
-		return val
-	}
-	return defaultVal
-}
-
-func env(key, defaultVal string) string {
-	return notEmpty(os.Getenv(key), defaultVal)
-}
-
 func openEditor() error {
-
 	if _, err := os.Stat(queryFilePath); os.IsNotExist(err) {
 		if err := os.MkdirAll(appHomePath, 0700); err != nil {
 			return err
@@ -98,21 +99,13 @@ func doRequest(req *app.HTTPRequest) (int, []byte, error) {
 	return resp.StatusCode, tryFormatJSON(body), nil
 }
 
-func tryFormatJSON(body []byte) []byte {
-	var out bytes.Buffer
-	if err := json.Indent(&out, body, "", jsonIndent); err != nil {
-		return body
-	}
-	return out.Bytes()
-}
-
 func runQuery(srcReader io.Reader) error {
-
 	request, err := app.ParseRequest(srcReader)
 	if err != nil {
 		return err
 	}
 
+	// TODO: get rid of the logic especially if we can accept "-" from cmd line(see corresponding todo)?
 	if sel, err := app.TryParseAsync(os.Stdin, os.Stdout); err == nil {
 		// got the whole query file or it is enough input to use parsed data from stdin
 		if sel.Validate() == nil {
@@ -154,12 +147,12 @@ func example() error {
 }
 
 func doCmd() error {
-	if len(os.Args) < 2 {
+	switch *flagCmd {
+	case cmdEdit:
 		return openEditor()
-	}
-
-	action := os.Args[1]
-	if action == "run" {
+	case cmdExample:
+		return example()
+	case cmdRun:
 		srcReader, err := os.Open(queryFilePath)
 		if err != nil {
 			return err
@@ -167,19 +160,12 @@ func doCmd() error {
 		defer srcReader.Close()
 		return runQuery(srcReader)
 	}
-	if action == "example" {
-		return example()
-	}
 
-	return fmt.Errorf("Unknown action: %s", action)
-}
-
-func errorf(format string, args ...interface{}) {
-	fmt.Fprintf(os.Stderr, "%s ", color.RedString("ERROR"))
-	fmt.Fprintf(os.Stderr, format+"\n", args...)
+	return fmt.Errorf("Unknown action: %s", *flagCmd)
 }
 
 func main() {
+	flag.Parse()
 
 	if err := doCmd(); err != nil {
 		if err == app.ErrFormatFailed {
@@ -200,4 +186,28 @@ func main() {
 		}
 		os.Exit(1)
 	}
+}
+
+func errorf(format string, args ...interface{}) {
+	fmt.Fprintf(os.Stderr, "%s ", color.RedString("ERROR"))
+	fmt.Fprintf(os.Stderr, format+"\n", args...)
+}
+
+func notEmpty(val, defaultVal string) string {
+	if val != "" {
+		return val
+	}
+	return defaultVal
+}
+
+func env(key, defaultVal string) string {
+	return notEmpty(os.Getenv(key), defaultVal)
+}
+
+func tryFormatJSON(body []byte) []byte {
+	var out bytes.Buffer
+	if err := json.Indent(&out, body, "", jsonIndent); err != nil {
+		return body
+	}
+	return out.Bytes()
 }

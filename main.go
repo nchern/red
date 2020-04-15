@@ -99,7 +99,7 @@ func doRequest(req *app.HTTPRequest) (int, []byte, error) {
 	return resp.StatusCode, tryFormatJSON(body), nil
 }
 
-func runQuery(srcReader io.Reader) error {
+func runQuery(srcReader io.Reader, out io.Writer) error {
 	request, err := app.ParseRequest(srcReader)
 	if err != nil {
 		return err
@@ -121,22 +121,16 @@ func runQuery(srcReader io.Reader) error {
 		return err
 	}
 
-	w, err := os.Create(outFilePath)
-	if err != nil {
-		return err
-	}
-	defer w.Close()
-
 	code, body, err := doRequest(request)
 	if err != nil {
 		return err
 	}
 
-	if _, err := fmt.Fprintf(w, "#> %d %s %s\n\n", code, request.Method, request.URL()); err != nil {
+	if _, err := fmt.Fprintf(out, "#> %d %s %s\n\n", code, request.Method, request.URL()); err != nil {
 		return err
 	}
 
-	_, err = w.Write(body)
+	_, err = out.Write(body)
 	return err
 }
 
@@ -146,6 +140,22 @@ func example() error {
 	return nil
 }
 
+func run() error {
+	srcReader, err := os.Open(queryFilePath)
+	if err != nil {
+		return err
+	}
+	defer srcReader.Close()
+
+	w, err := os.Create(outFilePath)
+	if err != nil {
+		return err
+	}
+	defer w.Close()
+
+	return runQuery(srcReader, w)
+}
+
 func doCmd() error {
 	switch *flagCmd {
 	case cmdEdit:
@@ -153,12 +163,7 @@ func doCmd() error {
 	case cmdExample:
 		return example()
 	case cmdRun:
-		srcReader, err := os.Open(queryFilePath)
-		if err != nil {
-			return err
-		}
-		defer srcReader.Close()
-		return runQuery(srcReader)
+		return run()
 	}
 
 	return fmt.Errorf("Unknown action: %s", *flagCmd)

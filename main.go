@@ -31,8 +31,8 @@ var (
 
 	appHomePath = path.Join(os.Getenv("HOME"), ".red")
 
-	queryFilename = filenameBase + ".txt"
-	outFilename   = filenameBase + ".out"
+	queryFilename = filenameBase + ".red"
+	outFilename   = filenameBase + ".redout"
 
 	queryFilePath = path.Join(appHomePath, queryFilename)
 	outFilePath   = path.Join(appHomePath, outFilename)

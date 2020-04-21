@@ -1,3 +1,5 @@
+#!red - marks file with recognisable type for your editor
+
 @localhost:9200
 
 # HELP:

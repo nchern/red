@@ -1,6 +1,6 @@
 " Red utility
 
-let g:red_query_out = '$HOME/.red/query.out'
+let g:red_query_out = '$HOME/.red/query.redout'
 
 " Runs query
 command! -range=% RedQuery :<line1>,<line2>!red -c run

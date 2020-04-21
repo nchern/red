@@ -2,7 +2,6 @@ package app
 
 import (
 	"bufio"
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -107,25 +106,20 @@ func (r *HTTPRequest) tryParseRequestString(line string) error {
 	return errNotARequestString
 }
 
-// TryParseAsync parses stdin and times out if stdin is open and empty
-func TryParseAsync(src io.Reader, out io.Writer) (*HTTPRequest, error) {
+// TryParseAsync tries to parse given reader and times out if it can't read on time
+func TryParseAsync(src io.Reader) (*HTTPRequest, error) {
 	var err error
 	var selection *HTTPRequest
-	var buf bytes.Buffer
-
-	tee := io.TeeReader(src, &buf)
 
 	finished := make(chan bool)
 
 	go func() {
-		selection, err = ParseRequest(tee)
+		selection, err = ParseRequest(src)
 		finished <- true
 	}()
 
 	select {
 	case <-finished:
-		// Mirror stdin to stout - this allows processing selections in vim correctly
-		out.Write(buf.Bytes())
 	case <-time.After(parseTimeout):
 		return nil, errTimeout
 	}

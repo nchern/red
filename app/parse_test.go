@@ -206,29 +206,18 @@ func (r *blockingReader) Read(p []byte) (n int, err error) {
 	select {}
 }
 
-type panicWriter struct{}
-
-func (w *panicWriter) Write(p []byte) (n int, err error) {
-	panic("must not be called")
-}
-
 func TestTryParseAsync(t *testing.T) {
-	// should read input and copy it to the output
+	// should read input
 	selected := "POST /foo/bar\n{}"
-	var out bytes.Buffer
 	var src = bytes.NewBufferString(selected)
 
-	_, err := TryParseAsync(src, &out)
+	_, err := TryParseAsync(src)
 	if err != nil {
 		t.Errorf("ParseScript returned %s", err)
 	}
-	if out.String() != selected {
-		t.Errorf("expected: %s; actual: %s", selected, out.String())
-	}
 
 	// should handle blocked stream
-	if _, err := TryParseAsync(&blockingReader{}, &panicWriter{}); err != errTimeout {
+	if _, err := TryParseAsync(&blockingReader{}); err != errTimeout {
 		t.Errorf("expected: %v; actual: %v", errTimeout, err)
 	}
-
 }

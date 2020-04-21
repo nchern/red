@@ -106,7 +106,11 @@ func runQuery(srcReader io.Reader, out io.Writer) error {
 	}
 
 	// TODO: get rid of the logic especially if we can accept "-" from cmd line(see corresponding todo)?
-	if sel, err := app.TryParseAsync(os.Stdin, os.Stdout); err == nil {
+
+	// Mirror stdin to stout - this allows processing selections in vim correctly
+	r := io.TeeReader(os.Stdin, os.Stdout)
+
+	if sel, err := app.TryParseAsync(r); err == nil {
 		// got the whole query file or it is enough input to use parsed data from stdin
 		if sel.Validate() == nil {
 			request = sel

@@ -99,18 +99,13 @@ func doRequest(req *app.HTTPRequest) (int, []byte, error) {
 	return resp.StatusCode, tryFormatJSON(body), nil
 }
 
-func runQuery(srcReader io.Reader, out io.Writer) error {
-	request, err := app.ParseRequest(srcReader)
+func runQuery(primaryReader io.Reader, secondryReader io.Reader, out io.Writer) error {
+	request, err := app.ParseRequest(primaryReader)
 	if err != nil {
 		return err
 	}
 
-	// TODO: get rid of the logic especially if we can accept "-" from cmd line(see corresponding todo)?
-
-	// Mirror stdin to stout - this allows processing selections in vim correctly
-	r := io.TeeReader(os.Stdin, os.Stdout)
-
-	if sel, err := app.TryParseAsync(r); err == nil {
+	if sel, err := app.TryParseAsync(secondryReader); err == nil {
 		// got the whole query file or it is enough input to use parsed data from stdin
 		if sel.Validate() == nil {
 			request = sel
@@ -157,7 +152,11 @@ func run() error {
 	}
 	defer w.Close()
 
-	return runQuery(srcReader, w)
+	// TODO: get rid of the logic especially if we can accept "-" from cmd line(see corresponding todo)?
+	// Mirror stdin to stout - this allows processing selections in vim correctly
+	secondary := io.TeeReader(os.Stdin, os.Stdout)
+
+	return runQuery(srcReader, secondary, w)
 }
 
 func doCmd() error {

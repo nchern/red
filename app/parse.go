@@ -22,7 +22,7 @@ const (
 
 var (
 	errTimeout = errors.New("timeout")
-	methods    = []string{"GET", "POST", "DELETE", "PUT"}
+	methods    = []string{"GET", "POST", "DELETE", "PUT", "OPTIONS", "HEAD"}
 )
 
 // HTTPRequest represents the request to be made

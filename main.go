@@ -23,6 +23,9 @@ const (
 	jsonIndent = "   "
 
 	filenameBase = "query"
+
+	queryFilename = filenameBase + ".red"
+	outFilename   = filenameBase + ".redout"
 )
 
 var (
@@ -31,9 +34,6 @@ var (
 
 	appHomePath = path.Join(os.Getenv("HOME"), ".red")
 
-	queryFilename = filenameBase + ".red"
-	outFilename   = filenameBase + ".redout"
-
 	queryFilePath = path.Join(appHomePath, queryFilename)
 	outFilePath   = path.Join(appHomePath, outFilename)
 
@@ -41,7 +41,8 @@ var (
 		Timeout: 3 * time.Second,
 	}
 
-	flagCmd = flag.String("c", "edit", "Command to exectue. One of: edit, run, example")
+	flagCmd        = flag.String("c", "edit", "Command to exectue. One of: edit, run, example")
+	flagSourceFile = flag.String("s", queryFilePath, "Source file with queries. Might be under edit in the editor of choice")
 
 	// opens the editor of preference to edit requests
 	cmdEdit = "edit"
@@ -54,7 +55,7 @@ var (
 )
 
 func openEditor() error {
-	if _, err := os.Stat(queryFilePath); os.IsNotExist(err) {
+	if _, err := os.Stat(*flagSourceFile); os.IsNotExist(err) {
 		if err := os.MkdirAll(appHomePath, 0700); err != nil {
 			return err
 		}

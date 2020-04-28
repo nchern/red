@@ -11,7 +11,6 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	"strings"
 	"time"
 
 	"github.com/nchern/red/app"
@@ -41,8 +40,10 @@ var (
 		Timeout: 3 * time.Second,
 	}
 
-	flagCmd        = flag.String("c", "edit", "Command to exectue. One of: edit, run, example")
-	flagSourceFile = flag.String("s", queryFilePath, "Source file with queries. Might be under edit in the editor of choice")
+	flagCmd            = flag.String("c", "edit", "Command to exectue. One of: edit, run, example")
+	flagSourceFile     = flag.String("s", queryFilePath, "Source file with queries. Might be under edit in the editor of choice")
+	flagOutputFile     = flag.String("o", outFilePath, "File to write query results. '-' means stdout")
+	flagDuplicateStdin = flag.Bool("d", true, "Duplicate query to stdin")
 
 	// opens the editor of preference to edit requests
 	cmdEdit = "edit"
@@ -65,10 +66,7 @@ func openEditor() error {
 		}
 	}
 
-	cmdArgs := strings.Split(editorFlags, " ")
-	cmdArgs = append(cmdArgs, queryFilePath, outFilePath)
-
-	cmd := exec.Command(editor, cmdArgs...)
+	cmd := exec.Command(editor, *flagSourceFile)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -141,21 +139,27 @@ func example() error {
 }
 
 func run() error {
-	srcReader, err := os.Open(queryFilePath)
+	srcReader, err := os.Open(*flagSourceFile)
 	if err != nil {
 		return err
 	}
 	defer srcReader.Close()
 
-	w, err := os.Create(outFilePath)
-	if err != nil {
-		return err
+	w := os.Stdout
+	if *flagOutputFile != "-" {
+		w, err = os.Create(*flagOutputFile)
+		if err != nil {
+			return err
+		}
+		defer w.Close()
 	}
-	defer w.Close()
 
-	// TODO: get rid of the logic especially if we can accept "-" from cmd line(see corresponding todo)?
-	// Mirror stdin to stout - this allows processing selections in vim correctly
-	secondary := io.TeeReader(os.Stdin, os.Stdout)
+	var secondary io.Reader = os.Stdin
+	if *flagDuplicateStdin {
+		// TODO: get rid of the logic especially if we can accept "-" from cmd line(see corresponding todo)?
+		// Mirror stdin to stout - this allows processing selections in vim correctly
+		secondary = io.TeeReader(os.Stdin, os.Stdout)
+	}
 
 	return runQuery(srcReader, secondary, w)
 }

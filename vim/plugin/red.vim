@@ -30,8 +30,6 @@ endfunction
 
 " Runs query
 command! -range=% RedQuery <line1>,<line2>call RedDoQuery()
-" Runs query - backwards compatibility
-command! -range=% RedQueryOld :<line1>,<line2>!red -c run
 
 command! RedShowResults :execute 'botright vsp ' . g:red_query_out
 

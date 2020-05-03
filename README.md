@@ -25,19 +25,20 @@ red run # runs the query from a query file
 red example # Outputs self-explainable query file body. You can get an idea about query file syntax from it 
 ```
 
+Vim integration
+===
+
+[Install plugin](vim/README.md)
+
+You have now a family of `:Red*` commands feel free to explore them.
+The main one is `:RedQuery` - runs the current file or a selected query as on screenshots below
+
 Screenshots
 ====
 ![Overview](https://github.com/nchern/red/blob/master/screenshots/general.png)
 
 ![Query selection example](https://github.com/nchern/red/blob/master/screenshots/selection.png)
 
-Vim hints
-===
-A couple of convenient shortcuts could be added to `~/.vimrc`
-```
-" runs a query
-command! -range=% DoQuery :<line1>,<line2>!red run
-```
 
 Other editors support
 ===
